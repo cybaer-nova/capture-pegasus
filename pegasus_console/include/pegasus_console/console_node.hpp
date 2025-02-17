@@ -119,7 +119,9 @@ public:
 
     // Set claw position
     void on_extend_claw_click();
+    void on_retract_claw_click();
     void on_catch_claw_click();
+    void on_release_claw_click();
 
     void start();
 
@@ -179,5 +181,7 @@ protected:
     rclcpp::Client<pegasus_msgs::srv::ResetPath>::SharedPtr reset_path_client_;
 
     rclcpp::Client<capture_msgs::srv::Claw>::SharedPtr extend_claw_client_;
+    rclcpp::Client<capture_msgs::srv::Claw>::SharedPtr retract_claw_client_;
     rclcpp::Client<capture_msgs::srv::Claw>::SharedPtr catch_claw_client_;
+    rclcpp::Client<capture_msgs::srv::Claw>::SharedPtr release_claw_client_;
 };

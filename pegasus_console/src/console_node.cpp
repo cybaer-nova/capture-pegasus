@@ -89,7 +89,9 @@ ConsoleNode::ConsoleNode(const std::string vehicle_namespace, const unsigned int
 
     // Claw position
     config_.on_extend_claw_click = std::bind(&ConsoleNode::on_extend_claw_click, this);
+    config_.on_retract_claw_click = std::bind(&ConsoleNode::on_retract_claw_click, this);
     config_.on_catch_claw_click = std::bind(&ConsoleNode::on_catch_claw_click, this);
+    config_.on_release_claw_click = std::bind(&ConsoleNode::on_release_claw_click, this);
 
     // Initialize the console UI
     console_ui_ = std::make_unique<ConsoleUI>(config_);
@@ -152,7 +154,9 @@ void ConsoleNode::initialize_services() {
     this->declare_parameter<std::string>("console.services.autopilot.reset_path", vehicle_namespace_ + std::string("/autopilot/trajectory/reset"));
 
     this->declare_parameter<std::string>("console.services.capture.extend_claw", vehicle_namespace_ + std::string("/capture/claw"));
+    this->declare_parameter<std::string>("console.services.capture.retract_claw", vehicle_namespace_ + std::string("/capture/claw"));
     this->declare_parameter<std::string>("console.services.capture.catch_claw", vehicle_namespace_ + std::string("/capture/claw"));
+    this->declare_parameter<std::string>("console.services.capture.release_claw", vehicle_namespace_ + std::string("/capture/claw"));
 
     // Create the service clients
     arm_disarm_client_ = this->create_client<pegasus_msgs::srv::Arm>(this->get_parameter("console.services.onboard.arm_disarm").as_string());
@@ -173,7 +177,9 @@ void ConsoleNode::initialize_services() {
 
     // Create the service clients for the claw control
     extend_claw_client_ = this->create_client<capture_msgs::srv::Claw>(this->get_parameter("console.services.capture.extend_claw").as_string());
+    retract_claw_client_ = this->create_client<capture_msgs::srv::Claw>(this->get_parameter("console.services.capture.retract_claw").as_string());    
     catch_claw_client_ = this->create_client<capture_msgs::srv::Claw>(this->get_parameter("console.services.capture.catch_claw").as_string());
+    release_claw_client_ = this->create_client<capture_msgs::srv::Claw>(this->get_parameter("console.services.capture.release_claw").as_string());
 }
 
 void ConsoleNode::start() {
@@ -231,7 +237,30 @@ void ConsoleNode::on_extend_claw_click() {
         // Send the request to the service
         extend_claw_client_->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Claw>::SharedFuture future) {
             auto response = future.get();
-            RCLCPP_INFO(this->get_logger(), "Extend/Retract claw response: %s", response->success ? "true" : "false");
+            RCLCPP_INFO(this->get_logger(), "Extend claw response: %s", response->success ? "true" : "false");
+        });
+    }).detach();
+}
+
+void ConsoleNode::on_retract_claw_click() {
+    // Executar a chamada ao serviço numa thread separada
+    std::thread([this]() {
+        auto request = std::make_shared<capture_msgs::srv::Claw::Request>();
+        request->command = 2;
+
+        // Wait for the service to be available
+        while (!retract_claw_client_->wait_for_service(std::chrono::seconds(1))) {
+            if (!rclcpp::ok()) {
+                RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service. Exiting.");
+                return;
+            }
+            RCLCPP_INFO(this->get_logger(), "service not available, waiting again...");
+        }
+
+        // Send the request to the service
+        retract_claw_client_->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Claw>::SharedFuture future) {
+            auto response = future.get();
+            RCLCPP_INFO(this->get_logger(), "Retract claw response: %s", response->success ? "true" : "false");
         });
     }).detach();
 }
@@ -240,7 +269,7 @@ void ConsoleNode::on_catch_claw_click() {
     // Executar a chamada ao serviço numa thread separada
     std::thread([this]() {
         auto request = std::make_shared<capture_msgs::srv::Claw::Request>();
-        request->command = 2;
+        request->command = 3;
 
         // Wait for the service to be available
         while (!catch_claw_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -254,7 +283,30 @@ void ConsoleNode::on_catch_claw_click() {
         // Send the request to the service
         catch_claw_client_->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Claw>::SharedFuture future) {
             auto response = future.get();
-            RCLCPP_INFO(this->get_logger(), "Catch/Release claw response: %s", response->success ? "true" : "false");
+            RCLCPP_INFO(this->get_logger(), "Catch claw response: %s", response->success ? "true" : "false");
+        });
+    }).detach();
+}
+
+void ConsoleNode::on_release_claw_click() {
+    // Executar a chamada ao serviço numa thread separada
+    std::thread([this]() {
+        auto request = std::make_shared<capture_msgs::srv::Claw::Request>();
+        request->command = 4;
+
+        // Wait for the service to be available
+        while (!release_claw_client_->wait_for_service(std::chrono::seconds(1))) {
+            if (!rclcpp::ok()) {
+                RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service. Exiting.");
+                return;
+            }
+            RCLCPP_INFO(this->get_logger(), "service not available, waiting again...");
+        }
+
+        // Send the request to the service
+        release_claw_client_->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Claw>::SharedFuture future) {
+            auto response = future.get();
+            RCLCPP_INFO(this->get_logger(), "Release claw response: %s", response->success ? "true" : "false");
         });
     }).detach();
 }
