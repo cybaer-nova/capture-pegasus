@@ -63,6 +63,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pegasus_msgs REQUIRED)
+find_package(capture_msgs REQUIRED)
 find_package(pegasus_utils REQUIRED)
 find_package(Eigen3 REQUIRED)
 
@@ -105,6 +106,7 @@ ament_target_dependencies(${PROJECT_NAME}
   rclcpp
   nav_msgs
   pegasus_msgs
+  capture_msgs
   pegasus_utils
 )
 
@@ -119,5 +121,7 @@ install(TARGETS ${PROJECT_NAME} DESTINATION lib/${PROJECT_NAME})
 # Specify where to install the launch files
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+
+ament_export_dependencies(capture_msgs)
 
 ament_package()

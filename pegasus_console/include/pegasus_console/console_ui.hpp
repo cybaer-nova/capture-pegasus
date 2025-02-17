@@ -95,6 +95,10 @@ public:
         std::function<void()> on_add_circle_click;
         std::function<void()> on_add_lemniscate_click;
         std::function<void()> on_reset_path_click;
+
+        // Claw control
+        std::function<void()> on_extend_claw_click;
+        std::function<void()> on_catch_claw_click;
     };
     
     ConsoleUI(const Config & config);

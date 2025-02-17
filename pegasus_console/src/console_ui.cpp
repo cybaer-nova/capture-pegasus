@@ -564,6 +564,13 @@ ftxui::Component ConsoleUI::autopilot_control() {
                 }),
                 ftxui::Container::Horizontal({
                     ftxui::Button("Go to Waypoint", std::bind(config_.on_set_autopilot_mode, std::string("WaypointMode")), ftxui::ButtonOption::Animated(ftxui::Color::Green)),
+                }),
+                ftxui::Renderer([] { return ftxui::text("Claw Control"); }),
+                ftxui::Container::Horizontal({
+                    ftxui::Button("Extend/Retract", config_.on_extend_claw_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
+                }),
+                ftxui::Container::Horizontal({
+                    ftxui::Button("Catch/Release ", config_.on_catch_claw_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
                 })
             }),
             ftxui::Container::Vertical({

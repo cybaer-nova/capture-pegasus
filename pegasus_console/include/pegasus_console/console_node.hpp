@@ -75,6 +75,9 @@
 #include "pegasus_msgs/srv/add_lemniscate.hpp"
 #include "pegasus_msgs/srv/reset_path.hpp"
 
+// ROS2 services for claw control
+#include "capture_msgs/srv/claw.hpp"
+
 class ConsoleNode : public rclcpp::Node {
 
 public:
@@ -113,6 +116,10 @@ public:
     void on_add_circle_click();
     void on_add_lemniscate_click();
     void on_reset_path_click();
+
+    // Set claw position
+    void on_extend_claw_click();
+    void on_catch_claw_click();
 
     void start();
 
@@ -170,4 +177,7 @@ protected:
     rclcpp::Client<pegasus_msgs::srv::AddCircle>::SharedPtr add_circle_client_;
     rclcpp::Client<pegasus_msgs::srv::AddLemniscate>::SharedPtr add_lemniscate_client_;
     rclcpp::Client<pegasus_msgs::srv::ResetPath>::SharedPtr reset_path_client_;
+
+    rclcpp::Client<capture_msgs::srv::Claw>::SharedPtr extend_claw_client_;
+    rclcpp::Client<capture_msgs::srv::Claw>::SharedPtr catch_claw_client_;
 };
