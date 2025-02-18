@@ -153,10 +153,10 @@ void ConsoleNode::initialize_services() {
     this->declare_parameter<std::string>("console.services.autopilot.add_lemniscate", vehicle_namespace_ + std::string("/autopilot/trajectory/add_lemniscate"));
     this->declare_parameter<std::string>("console.services.autopilot.reset_path", vehicle_namespace_ + std::string("/autopilot/trajectory/reset"));
 
-    this->declare_parameter<std::string>("console.services.capture.extend_claw", vehicle_namespace_ + std::string("/capture/claw"));
-    this->declare_parameter<std::string>("console.services.capture.retract_claw", vehicle_namespace_ + std::string("/capture/claw"));
-    this->declare_parameter<std::string>("console.services.capture.catch_claw", vehicle_namespace_ + std::string("/capture/claw"));
-    this->declare_parameter<std::string>("console.services.capture.release_claw", vehicle_namespace_ + std::string("/capture/claw"));
+    this->declare_parameter<std::string>("console.services.capture.extend_claw", vehicle_namespace_ + std::string("/capture/claw_arm"));
+    this->declare_parameter<std::string>("console.services.capture.retract_claw", vehicle_namespace_ + std::string("/capture/claw_arm"));
+    this->declare_parameter<std::string>("console.services.capture.catch_claw", vehicle_namespace_ + std::string("/capture/claw_fingers"));
+    this->declare_parameter<std::string>("console.services.capture.release_claw", vehicle_namespace_ + std::string("/capture/claw_fingers"));
 
     // Create the service clients
     arm_disarm_client_ = this->create_client<pegasus_msgs::srv::Arm>(this->get_parameter("console.services.onboard.arm_disarm").as_string());
@@ -223,7 +223,7 @@ void ConsoleNode::on_extend_claw_click() {
     // Executar a chamada ao serviço numa thread separada
     std::thread([this]() {
         auto request = std::make_shared<capture_msgs::srv::Claw::Request>();
-        request->command = 1;
+        request->command = "extend";
 
         // Wait for the service to be available
         while (!extend_claw_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -246,7 +246,7 @@ void ConsoleNode::on_retract_claw_click() {
     // Executar a chamada ao serviço numa thread separada
     std::thread([this]() {
         auto request = std::make_shared<capture_msgs::srv::Claw::Request>();
-        request->command = 2;
+        request->command = "retract";
 
         // Wait for the service to be available
         while (!retract_claw_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -269,7 +269,7 @@ void ConsoleNode::on_catch_claw_click() {
     // Executar a chamada ao serviço numa thread separada
     std::thread([this]() {
         auto request = std::make_shared<capture_msgs::srv::Claw::Request>();
-        request->command = 3;
+        request->command = "catch";
 
         // Wait for the service to be available
         while (!catch_claw_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -292,7 +292,7 @@ void ConsoleNode::on_release_claw_click() {
     // Executar a chamada ao serviço numa thread separada
     std::thread([this]() {
         auto request = std::make_shared<capture_msgs::srv::Claw::Request>();
-        request->command = 4;
+        request->command = "release";
 
         // Wait for the service to be available
         while (!release_claw_client_->wait_for_service(std::chrono::seconds(1))) {
