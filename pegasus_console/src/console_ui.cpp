@@ -629,18 +629,18 @@ ftxui::Component ConsoleUI::autopilot_control() {
                     }),
                     ftxui::Renderer([] { return ftxui::separator(); }),
                     ftxui::Container::Vertical({
-                        ftxui::Renderer([] { return ftxui::text("Claw Control"); }),
+                        ftxui::Renderer([] { return ftxui::text("Gripper Control"); }),
                         ftxui::Container::Horizontal({
-                            ftxui::Button("Extend ", config_.on_extend_claw_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
+                            ftxui::Button("Extend ", config_.on_extend_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
                         }),
                         ftxui::Container::Horizontal({
-                            ftxui::Button("Retract", config_.on_retract_claw_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
+                            ftxui::Button("Retract", config_.on_retract_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
                         }),
                         ftxui::Container::Horizontal({
-                            ftxui::Button(" Catch ", config_.on_catch_claw_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
+                            ftxui::Button(" Catch ", config_.on_catch_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
                         }),
                         ftxui::Container::Horizontal({
-                            ftxui::Button("Release", config_.on_release_claw_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
+                            ftxui::Button("Release", config_.on_release_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
                         })
                     }),
                 }),

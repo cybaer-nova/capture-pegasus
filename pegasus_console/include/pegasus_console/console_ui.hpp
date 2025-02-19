@@ -96,11 +96,11 @@ public:
         std::function<void()> on_add_lemniscate_click;
         std::function<void()> on_reset_path_click;
 
-        // Claw control
-        std::function<void()> on_extend_claw_click;
-        std::function<void()> on_retract_claw_click;
-        std::function<void()> on_catch_claw_click;
-        std::function<void()> on_release_claw_click;
+        // gripper control
+        std::function<void()> on_extend_gripper_click;
+        std::function<void()> on_retract_gripper_click;
+        std::function<void()> on_catch_gripper_click;
+        std::function<void()> on_release_gripper_click;
     };
     
     ConsoleUI(const Config & config);
