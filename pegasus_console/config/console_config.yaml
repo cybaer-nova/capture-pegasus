@@ -7,6 +7,8 @@
         onboard:
           status: "fmu/status"
           state: "fmu/filter/state"
+        gripper:
+          gripper: "/capture/gripper_angle"
       publishers:
         onboard:
           attitude_rate: "fmu/in/throtle/attitude_rate"

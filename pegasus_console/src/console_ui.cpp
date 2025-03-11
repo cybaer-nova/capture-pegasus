@@ -239,6 +239,10 @@ ftxui::Element ConsoleUI::state_display() {
         ftxui::text("Local Position: " + std::string(this->status_.health.local_position_ok ? "Ok" : "Not Ok")),
         ftxui::text("Acc. Calibration: " + std::string(this->status_.health.acc_calibrated ? "Ok" : "Not Ok")),
         ftxui::text("Mag. Calibration: " + std::string(this->status_.health.mag_calibrated ? "Ok" : "Not Ok")),
+        ftxui::separator(),
+        ftxui::text("Gripper") | ftxui::center,
+        ftxui::separator(),
+        ftxui::text("Angle: " + std::to_string(this->gripper_.angle) + " deg")
     });    
 }
 
@@ -631,18 +635,20 @@ ftxui::Component ConsoleUI::autopilot_control() {
                     ftxui::Container::Vertical({
                         ftxui::Renderer([] { return ftxui::text("Gripper Control"); }),
                         ftxui::Container::Horizontal({
-                            ftxui::Button("Extend ", config_.on_extend_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
+                            ftxui::Button("   Extend    ", config_.on_extend_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
                         }),
                         ftxui::Container::Horizontal({
-                            ftxui::Button("Retract", config_.on_retract_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
+                            ftxui::Button("   Retract   ", config_.on_retract_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
                         }),
                         ftxui::Container::Horizontal({
-                            ftxui::Button(" Catch ", config_.on_catch_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
+                            ftxui::Button("    Open     ", config_.on_release_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
                         }),
+                        ftxui::Renderer([] { return ftxui::text("Simulation Only"); }),
                         ftxui::Container::Horizontal({
-                            ftxui::Button("Release", config_.on_release_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
+                            ftxui::Button("    Close    ", config_.on_catch_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
                         })
                     }),
+                    ftxui::Renderer([] { return ftxui::separator(); })
                 }),
             ftxui::Button("Reset Trajectory", config_.on_reset_path_click, ftxui::ButtonOption::Animated(ftxui::Color::Green)),
             ftxui::Button("Follow Trajectory", std::bind(config_.on_set_autopilot_mode, std::string("FollowTrajectoryMode")), ftxui::ButtonOption::Animated(ftxui::Color::Green)),

@@ -121,6 +121,7 @@ public:
     // The latest status and state of the vehicle
     FmuStatus status_;
     State state_;
+    Gripper gripper_;
     std::string autopilot_mode_;
 
 protected:

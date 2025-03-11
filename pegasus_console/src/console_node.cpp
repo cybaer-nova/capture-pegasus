@@ -104,6 +104,8 @@ void ConsoleNode::initialize_subscribers() {
     this->declare_parameter<std::string>("console.subscribers.onboard.status", vehicle_namespace_ + std::string("/fmu/status"));
     this->declare_parameter<std::string>("console.subscribers.onboard.state", vehicle_namespace_ + std::string("/fmu/filter/state"));
     this->declare_parameter<std::string>("console.subscribers.autopilot.status", vehicle_namespace_ + std::string("/autopilot/status"));
+    this->declare_parameter<std::string>("console.subscribers.gripper.gripper", vehicle_namespace_ + std::string("/capture/gripper_angle"));
+
 
     // Status of the vehicle
     status_sub_ = this->create_subscription<pegasus_msgs::msg::Status>(
@@ -119,6 +121,10 @@ void ConsoleNode::initialize_subscribers() {
     autopilot_status_sub_ = this->create_subscription<pegasus_msgs::msg::AutopilotStatus>(
         this->get_parameter("console.subscribers.autopilot.status").as_string(), 
         rclcpp::SensorDataQoS(), std::bind(&ConsoleNode::autopilot_status_callback, this, std::placeholders::_1));
+
+    gripper_angle_sub_ = this->create_subscription<capture_msgs::msg::Angle>(
+        this->get_parameter("console.subscribers.gripper.gripper").as_string(), 
+        rclcpp::SensorDataQoS(), std::bind(&ConsoleNode::gripper_callback, this, std::placeholders::_1));
 }
 
 void ConsoleNode::initialize_publishers() {
@@ -899,4 +905,9 @@ void ConsoleNode::state_callback(const nav_msgs::msg::Odometry::ConstSharedPtr m
 void ConsoleNode::autopilot_status_callback(const pegasus_msgs::msg::AutopilotStatus::ConstSharedPtr msg) {
     // Update the current autopilot mode
     console_ui_->autopilot_mode_ = msg->mode;
+}
+
+void ConsoleNode::gripper_callback(const capture_msgs::msg::Angle::ConstSharedPtr msg) {
+    // Update the current gripper angle
+    console_ui_->gripper_.angle = msg->angle;
 }

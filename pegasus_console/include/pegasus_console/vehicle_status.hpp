@@ -185,3 +185,7 @@ struct AutopilotwidgetData {
     Eigen::Matrix<double, 4, 1> lemniscate{Eigen::Matrix<double, 4, 1>::Zero()};
     float lemniscate_speed{0.0};
 };
+
+struct Gripper {
+    float angle{0.000};
+};
