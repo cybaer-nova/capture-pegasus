@@ -88,6 +88,7 @@ ConsoleNode::ConsoleNode(const std::string vehicle_namespace, const unsigned int
     config_.on_reset_path_click = std::bind(&ConsoleNode::on_reset_path_click, this);
 
     // gripper position
+    config_.on_control_gripper_click = std::bind(&ConsoleNode::on_control_gripper_click, this);
     config_.on_extend_gripper_click = std::bind(&ConsoleNode::on_extend_gripper_click, this);
     config_.on_retract_gripper_click = std::bind(&ConsoleNode::on_retract_gripper_click, this);
     config_.on_catch_gripper_click = std::bind(&ConsoleNode::on_catch_gripper_click, this);
@@ -105,6 +106,7 @@ void ConsoleNode::initialize_subscribers() {
     this->declare_parameter<std::string>("console.subscribers.onboard.state", vehicle_namespace_ + std::string("/fmu/filter/state"));
     this->declare_parameter<std::string>("console.subscribers.autopilot.status", vehicle_namespace_ + std::string("/autopilot/status"));
     this->declare_parameter<std::string>("console.subscribers.gripper.gripper", vehicle_namespace_ + std::string("/capture/gripper_angle"));
+    this->declare_parameter<std::string>("console.subscribers.gripper.arm", vehicle_namespace_ + std::string("/capture/arm_angle"));
 
 
     // Status of the vehicle
@@ -125,6 +127,10 @@ void ConsoleNode::initialize_subscribers() {
     gripper_angle_sub_ = this->create_subscription<capture_msgs::msg::Angle>(
         this->get_parameter("console.subscribers.gripper.gripper").as_string(), 
         rclcpp::SensorDataQoS(), std::bind(&ConsoleNode::gripper_callback, this, std::placeholders::_1));
+    
+    arm_angle_sub_ = this->create_subscription<capture_msgs::msg::Angle>(
+        this->get_parameter("console.subscribers.gripper.arm").as_string(), 
+        rclcpp::SensorDataQoS(), std::bind(&ConsoleNode::arm_callback, this, std::placeholders::_1));
 }
 
 void ConsoleNode::initialize_publishers() {
@@ -159,6 +165,8 @@ void ConsoleNode::initialize_services() {
     this->declare_parameter<std::string>("console.services.autopilot.add_lemniscate", vehicle_namespace_ + std::string("/autopilot/trajectory/add_lemniscate"));
     this->declare_parameter<std::string>("console.services.autopilot.reset_path", vehicle_namespace_ + std::string("/autopilot/trajectory/reset"));
 
+    this->declare_parameter<std::string>("console.services.capture.control_gripper", vehicle_namespace_ + std::string("/capture/gripper_control"));
+    this->declare_parameter<std::string>("console.services.capture.reference_control_gripper", vehicle_namespace_ + std::string("/capture/gripper_reference_control"));
     this->declare_parameter<std::string>("console.services.capture.extend_gripper", vehicle_namespace_ + std::string("/capture/gripper_arm"));
     this->declare_parameter<std::string>("console.services.capture.retract_gripper", vehicle_namespace_ + std::string("/capture/gripper_arm"));
     this->declare_parameter<std::string>("console.services.capture.catch_gripper", vehicle_namespace_ + std::string("/capture/gripper_fingers"));
@@ -182,6 +190,8 @@ void ConsoleNode::initialize_services() {
     reset_path_client_ = this->create_client<pegasus_msgs::srv::ResetPath>(this->get_parameter("console.services.autopilot.reset_path").as_string());
 
     // Create the service clients for the gripper control
+    control_gripper_client_ = this->create_client<capture_msgs::srv::Control>(this->get_parameter("console.services.capture.control_gripper").as_string());
+    reference_control_gripper_client_ = this->create_client<capture_msgs::srv::Gripper>(this->get_parameter("console.services.capture.reference_control_gripper").as_string());
     extend_gripper_client_ = this->create_client<capture_msgs::srv::Gripper>(this->get_parameter("console.services.capture.extend_gripper").as_string());
     retract_gripper_client_ = this->create_client<capture_msgs::srv::Gripper>(this->get_parameter("console.services.capture.retract_gripper").as_string());    
     catch_gripper_client_ = this->create_client<capture_msgs::srv::Gripper>(this->get_parameter("console.services.capture.catch_gripper").as_string());
@@ -225,14 +235,18 @@ void ConsoleNode::on_arm_disarm_click(bool arm) {
     
 }
 
-void ConsoleNode::on_extend_gripper_click() {
-    // Executar a chamada ao serviço numa thread separada
+void ConsoleNode::on_control_gripper_click() {
     std::thread([this]() {
-        auto request = std::make_shared<capture_msgs::srv::Gripper::Request>();
-        request->command = "extend";
+        if (console_ui_->arm_.control_state == 1) //If Active -> Inactive
+            console_ui_->arm_.control_state = 0;
+        else 
+            console_ui_->arm_.control_state = 1;
+
+        auto request = std::make_shared<capture_msgs::srv::Control::Request>();
+        request->state = console_ui_->arm_.control_state;
 
         // Wait for the service to be available
-        while (!extend_gripper_client_->wait_for_service(std::chrono::seconds(1))) {
+        while (!control_gripper_client_->wait_for_service(std::chrono::seconds(1))) {
             if (!rclcpp::ok()) {
                 RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service. Exiting.");
                 return;
@@ -241,9 +255,51 @@ void ConsoleNode::on_extend_gripper_click() {
         }
 
         // Send the request to the service
-        extend_gripper_client_->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Gripper>::SharedFuture future) {
+        control_gripper_client_->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Control>::SharedFuture future) {
             auto response = future.get();
             RCLCPP_INFO(this->get_logger(), "Extend gripper response: %s", response->success ? "true" : "false");
+        });
+    }).detach();
+
+}
+
+
+void ConsoleNode::on_extend_gripper_click() {
+    // Executar a chamada ao serviço numa thread separada
+    std::thread([this]() {
+        auto request = std::make_shared<capture_msgs::srv::Gripper::Request>();
+        request->motor_value = -1.0f;
+
+        if(console_ui_->arm_.control_state == 0) {
+            // Wait for the service to be available
+            while (!extend_gripper_client_->wait_for_service(std::chrono::seconds(1))) {
+                if (!rclcpp::ok()) {
+                    RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service. Exiting.");
+                    return;
+                }
+                RCLCPP_INFO(this->get_logger(), "service not available, waiting again...");
+            }
+
+            // Send the request to the service
+            extend_gripper_client_->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Gripper>::SharedFuture future) {
+                auto response = future.get();
+                RCLCPP_INFO(this->get_logger(), "Extend gripper response: %s", response->success ? "true" : "false");
+            });
+        }
+
+        // Wait for the service to be available
+        while (!reference_control_gripper_client_->wait_for_service(std::chrono::seconds(1))) {
+            if (!rclcpp::ok()) {
+                RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service. Exiting.");
+                return;
+            }
+            RCLCPP_INFO(this->get_logger(), "service not available, waiting again...");
+        }
+
+        // Send the request to the service
+        reference_control_gripper_client_->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Gripper>::SharedFuture future) {
+            auto response = future.get();
+            RCLCPP_INFO(this->get_logger(), "Reference control gripper response: %s", response->success ? "true" : "false");
         });
     }).detach();
 }
@@ -252,10 +308,27 @@ void ConsoleNode::on_retract_gripper_click() {
     // Executar a chamada ao serviço numa thread separada
     std::thread([this]() {
         auto request = std::make_shared<capture_msgs::srv::Gripper::Request>();
-        request->command = "retract";
+        request->motor_value = 1.0f;
+        
+        if(console_ui_->arm_.control_state == 0) {
+            // Wait for the service to be available
+            while (!retract_gripper_client_->wait_for_service(std::chrono::seconds(1))) {
+                if (!rclcpp::ok()) {
+                    RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service. Exiting.");
+                    return;
+                }
+                RCLCPP_INFO(this->get_logger(), "service not available, waiting again...");
+            }
+
+            // Send the request to the service
+            retract_gripper_client_->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Gripper>::SharedFuture future) {
+                auto response = future.get();
+                RCLCPP_INFO(this->get_logger(), "Retract gripper response: %s", response->success ? "true" : "false");
+            });
+        }
 
         // Wait for the service to be available
-        while (!retract_gripper_client_->wait_for_service(std::chrono::seconds(1))) {
+        while (!reference_control_gripper_client_ ->wait_for_service(std::chrono::seconds(1))) {
             if (!rclcpp::ok()) {
                 RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service. Exiting.");
                 return;
@@ -264,9 +337,9 @@ void ConsoleNode::on_retract_gripper_click() {
         }
 
         // Send the request to the service
-        retract_gripper_client_->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Gripper>::SharedFuture future) {
+        reference_control_gripper_client_ ->async_send_request(request, [this](rclcpp::Client<capture_msgs::srv::Gripper>::SharedFuture future) {
             auto response = future.get();
-            RCLCPP_INFO(this->get_logger(), "Retract gripper response: %s", response->success ? "true" : "false");
+            RCLCPP_INFO(this->get_logger(), "Reference control gripper response: %s", response->success ? "true" : "false");
         });
     }).detach();
 }
@@ -275,7 +348,7 @@ void ConsoleNode::on_catch_gripper_click() {
     // Executar a chamada ao serviço numa thread separada
     std::thread([this]() {
         auto request = std::make_shared<capture_msgs::srv::Gripper::Request>();
-        request->command = "catch";
+        request->motor_value = -1.0f;
 
         // Wait for the service to be available
         while (!catch_gripper_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -298,7 +371,7 @@ void ConsoleNode::on_release_gripper_click() {
     // Executar a chamada ao serviço numa thread separada
     std::thread([this]() {
         auto request = std::make_shared<capture_msgs::srv::Gripper::Request>();
-        request->command = "release";
+        request->motor_value = 1.0f;
 
         // Wait for the service to be available
         while (!release_gripper_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -910,4 +983,9 @@ void ConsoleNode::autopilot_status_callback(const pegasus_msgs::msg::AutopilotSt
 void ConsoleNode::gripper_callback(const capture_msgs::msg::Angle::ConstSharedPtr msg) {
     // Update the current gripper angle
     console_ui_->gripper_.angle = msg->angle;
+}
+
+void ConsoleNode::arm_callback(const capture_msgs::msg::Angle::ConstSharedPtr msg) {
+    // Update the current arm angle
+    console_ui_->arm_.angle = msg->angle;
 }

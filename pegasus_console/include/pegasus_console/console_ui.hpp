@@ -97,6 +97,7 @@ public:
         std::function<void()> on_reset_path_click;
 
         // gripper control
+        std::function<void()> on_control_gripper_click;
         std::function<void()> on_extend_gripper_click;
         std::function<void()> on_retract_gripper_click;
         std::function<void()> on_catch_gripper_click;
@@ -122,6 +123,7 @@ public:
     FmuStatus status_;
     State state_;
     Gripper gripper_;
+    Gripper arm_;
     std::string autopilot_mode_;
 
 protected:

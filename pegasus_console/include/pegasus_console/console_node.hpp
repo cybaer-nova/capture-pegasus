@@ -78,6 +78,7 @@
 
 // ROS2 services for gripper control
 #include "capture_msgs/srv/gripper.hpp"
+#include "capture_msgs/srv/control.hpp"
 
 class ConsoleNode : public rclcpp::Node {
 
@@ -119,6 +120,7 @@ public:
     void on_reset_path_click();
 
     // Set gripper position
+    void on_control_gripper_click();
     void on_extend_gripper_click();
     void on_retract_gripper_click();
     void on_catch_gripper_click();
@@ -136,6 +138,7 @@ protected:
     void status_callback(const pegasus_msgs::msg::Status::ConstSharedPtr msg);
     void autopilot_status_callback(const pegasus_msgs::msg::AutopilotStatus::ConstSharedPtr msg);
     void gripper_callback(const capture_msgs::msg::Angle::ConstSharedPtr msg);
+    void arm_callback(const capture_msgs::msg::Angle::ConstSharedPtr msg);
 
     // Auxiliar variable to setup the vehicle namespace when launching the node as a normal c++ program
     std::string vehicle_namespace_;
@@ -162,6 +165,7 @@ protected:
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr filter_sub_;
     rclcpp::Subscription<pegasus_msgs::msg::AutopilotStatus>::SharedPtr autopilot_status_sub_;
     rclcpp::Subscription<capture_msgs::msg::Angle>::SharedPtr gripper_angle_sub_;
+    rclcpp::Subscription<capture_msgs::msg::Angle>::SharedPtr arm_angle_sub_;
 
     // ROS2 publishers
     rclcpp::Publisher<pegasus_msgs::msg::ControlAttitude>::SharedPtr attitude_rate_pub_;
@@ -183,6 +187,8 @@ protected:
     rclcpp::Client<pegasus_msgs::srv::AddLemniscate>::SharedPtr add_lemniscate_client_;
     rclcpp::Client<pegasus_msgs::srv::ResetPath>::SharedPtr reset_path_client_;
 
+    rclcpp::Client<capture_msgs::srv::Control>::SharedPtr control_gripper_client_;
+    rclcpp::Client<capture_msgs::srv::Gripper>::SharedPtr reference_control_gripper_client_;
     rclcpp::Client<capture_msgs::srv::Gripper>::SharedPtr extend_gripper_client_;
     rclcpp::Client<capture_msgs::srv::Gripper>::SharedPtr retract_gripper_client_;
     rclcpp::Client<capture_msgs::srv::Gripper>::SharedPtr catch_gripper_client_;

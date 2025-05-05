@@ -188,4 +188,5 @@ struct AutopilotwidgetData {
 
 struct Gripper {
     float angle{0.000};
+    int control_state{0};
 };

@@ -194,7 +194,6 @@ ftxui::Component ConsoleUI::control_buttons() {
 }
 
 ftxui::Element ConsoleUI::state_display() {
-    
     return ftxui::vbox({
         ftxui::hbox({
             ftxui::vbox({
@@ -242,7 +241,9 @@ ftxui::Element ConsoleUI::state_display() {
         ftxui::separator(),
         ftxui::text("Gripper") | ftxui::center,
         ftxui::separator(),
-        ftxui::text("Angle: " + std::to_string(this->gripper_.angle) + " deg")
+        ftxui::text("Fingers Angle: " + float_to_string(this->gripper_.angle) + " deg"),
+        ftxui::text("Arm Angle: " + float_to_string(this->arm_.angle) + " deg"),
+        ftxui::text("Controller: " + std::string(this->arm_.control_state ? "Active" : "Inactive"))
     });    
 }
 
@@ -634,6 +635,9 @@ ftxui::Component ConsoleUI::autopilot_control() {
                     ftxui::Renderer([] { return ftxui::separator(); }),
                     ftxui::Container::Vertical({
                         ftxui::Renderer([] { return ftxui::text("Gripper Control"); }),
+                        ftxui::Container::Horizontal({
+                            ftxui::Button(" Set Control ", config_.on_control_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Magenta)),
+                        }),
                         ftxui::Container::Horizontal({
                             ftxui::Button("   Extend    ", config_.on_extend_gripper_click, ftxui::ButtonOption::Animated(ftxui::Color::Cyan)),
                         }),
