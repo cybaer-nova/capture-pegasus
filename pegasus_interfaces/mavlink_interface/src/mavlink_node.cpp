@@ -429,6 +429,19 @@ uint8_t MavlinkNode::set_motors(const int32_t index, const float value) {
 }
 
 /**
+* @brief Sends a signal to control a specific motor or actuator.
+* 
+* @param index Specifies the index of the motor/actuator, "Actuactor Set", to control.
+*              This should be an integer representing the target gate
+* @param value Specifies the value to set for the actuator
+*              The value should be a float, between -1.0 (minimum) and 1.0 (maximum)
+*
+void MavlinkNode::set_motors_async(const int32_t index, const float value, std::function<void(mavsdk::Action::Result)> callback) {
+    action_->set_actuator_async(index, value, callback);
+}
+*/
+
+/**
  * @brief Method to autoland the vehicle using the onboard microntroller controller
  */
 uint8_t MavlinkNode::land() {

@@ -216,6 +216,17 @@ public:
     *              The value should be a float, between -1.0 (minimum) and 1.0 (maximum)
     */
     uint8_t set_motors(const int index, const float value);
+
+    /**
+    * @brief Sends a signal to control a specific motor or actuator.
+    * 
+    * @param index Specifies the index of the motor/actuator, "Actuactor Set", to control.
+    *              This should be an integer representing the target gate
+    * @param value Specifies the value to set for the actuator
+    *              The value should be a float, between -1.0 (minimum) and 1.0 (maximum)
+    */
+   // void set_motors_async(const int index, const float value, std::function<void(mavsdk::Action::Result)> callback);
+    
     
     /**
      * @brief Method to make the vehicle switch to the offboard mode. This function is blocking

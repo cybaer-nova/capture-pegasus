@@ -315,6 +315,18 @@ void ROSNode::init_subscribers_and_services() {
     control_motors_service_ = this->create_service<pegasus_msgs::srv::ControlMotors>(
         control_motors_topic.as_string(), std::bind(&ROSNode::control_motors_callback, this, std::placeholders::_1, std::placeholders::_2));
     
+    /*
+    this->declare_parameter<std::string>("services.control_motors_async", "control_motors_async");
+    rclcpp::Parameter control_motors_async_topic = this->get_parameter("services.control_motors_async");
+    control_motors_async_service_ = this->create_service<pegasus_msgs::srv::ControlMotors>(
+        control_motors_async_topic.as_string(),
+        std::bind(&ROSNode::control_motors_async_callback, this,
+                    std::placeholders::_1,  // request_header
+                    std::placeholders::_2,  // request
+                    std::placeholders::_3)  // response
+    );*/
+        
+    
     // ------------------------------------------------------------------------
     // Initiate the service to kill switch the vehicle
     // ------------------------------------------------------------------------
@@ -954,6 +966,38 @@ void ROSNode::control_motors_callback(const pegasus_msgs::srv::ControlMotors::Re
     // Send response
     response->success = mavlink_node_->set_motors(index, value); 
 }
+
+
+/**
+* @ingroup servicesCallbacks
+* @brief Control motors service callback. When a service request is reached from the control_motors_service_,
+* this callback is called and will send a mavlink command for the vehicle to change the value of the specified motor. 
+* @param request The request to set the motor value at the corresponding index.
+* @param response The response from this service, of type uint8.
+*
+void ROSNode::control_motors_async_callback(const std::shared_ptr<rmw_request_id_t> request_header, const pegasus_msgs::srv::ControlMotors::Request::SharedPtr request, const pegasus_msgs::srv::ControlMotors::Response::SharedPtr response) {
+    // Retrieve values from the request
+    int32_t index = request->index;
+    float value = request->value;
+
+    mavlink_node_->set_motors_async(index, value,
+        [this, request_header, response](mavsdk::Action::Result result) {
+            // Send response
+            if (result == mavsdk::Action::Result::Success) {
+                response->success = true;
+                RCLCPP_INFO(this->get_logger(), "Controle de motor executado com sucesso.");
+            } else {
+                response->success = false;
+                RCLCPP_ERROR(this->get_logger(), "Erro no atuador.");
+            }
+
+            try {
+                control_motors_async_service_->send_response(*request_header, *response);
+            } catch (const std::exception &e) {
+                RCLCPP_ERROR(this->get_logger(), "Falha ao enviar resposta: %s", e.what());
+            }        
+        });
+}*/
 
 /**
  * @ingroup servicesCallbacks
